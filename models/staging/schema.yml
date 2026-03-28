@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: staging
+    database: final-project-de-zoomcamp-2026 
+    schema: divvy_trips_data 
+    tables:
+      - name: external_divvy_data
+        description: "Raw Divvy trip data loaded from GCS"
+        # We removed the 'tests' block from here because it was formatted incorrectly.
+
+models:
+  - name: staging_divvy_trips  # MUST MATCH YOUR FILENAME: staging_divvy_trips.sql
+    description: "Staged Divvy data with cleaned types and filtered ghost rides"
+    columns:
+      - name: ride_id
+        description: "Primary key for the trips"
+        tests:
+          - unique
+          - not_null
+      - name: start_datetime
+        tests:
+          - not_null

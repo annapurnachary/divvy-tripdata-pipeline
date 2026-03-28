@@ -1,0 +1,7 @@
+
+target/
+dbt_packages/
+logs/
+.terraform/
+.venv/
+__pycache__/
