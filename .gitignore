@@ -5,3 +5,27 @@ logs/
 .terraform/
 .venv/
 __pycache__/
+keys/
+# Python virtual environment
+.venv/
+__pycache__/
+*.py[cod]
+
+# Google Cloud Credentials (VERY IMPORTANT)
+*.json
+credentials/
+.gcp/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# Mac/Windows system files
+.DS_Store
+Thumbs.db

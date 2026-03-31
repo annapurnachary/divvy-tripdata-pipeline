@@ -1,0 +1,38 @@
+services:
+  # Orchestrator: Kestra
+  kestra:
+    image: kestra/kestra:latest
+    command: server local
+    ports:
+      - "8080:8080"
+    volumes:
+      - kestra_storage:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${LOCAL_GCP_CREDS}:/app/gcp_creds.json
+    environment:
+      KESTRA_CONFIGURATION: |
+        kestra:
+          storage:
+            type: local
+            local:
+              base-path: /app/storage
+      # FIXED: Changed from '-' list style to ':' mapping style
+      GOOGLE_APPLICATION_CREDENTIALS: /app/gcp_creds.json
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+      GCP_GCS_BUCKET: ${GCP_GCS_BUCKET}
+
+  # Your Ingestion & dbt Worker
+  pipeline_worker:
+    build: .
+    volumes:
+      - .:/usr/app
+      - ${HOME}/.config/gcloud:/root/.config/gcloud
+      - ${LOCAL_GCP_CREDS}:/app/gcp_creds.json
+    environment:
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+      GCP_GCS_BUCKET: ${GCP_GCS_BUCKET}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/gcp_creds.json
+
+volumes:
+  kestra_storage:
+
