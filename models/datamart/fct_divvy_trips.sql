@@ -14,18 +14,20 @@ WITH staged_data AS (
 
 SELECT 
     *,
-    -- 1. Calculations from your first block
-    TIMESTAMP_DIFF(end_datetime, start_datetime, MINUTE) AS duration_minutes,
+    -- 1. Use the names from your staging model (start_datetime/end_datetime)
+    TIMESTAMP_DIFF(end_datetime, start_datetime, MINUTE) AS duration_minutes_calc,
+
+    -- 2. Time Buckets for Heatmaps
     EXTRACT(HOUR FROM start_datetime) AS start_hour,
     FORMAT_TIMESTAMP('%A', start_datetime) AS day_of_week,
-    
-    -- 2. New logic from your second block (Round trips)
+
+    -- 3. Boolean flag for "Round Trips"
     CASE 
         WHEN start_station_id = end_station_id THEN 1 
         ELSE 0 
     END AS is_round_trip,
-    
-    -- 3. New logic from your second block (Commute periods)
+
+    -- 4. Part of the day (Commute analysis)
     CASE 
         WHEN EXTRACT(HOUR FROM start_datetime) BETWEEN 7 AND 9 THEN 'Morning Rush'
         WHEN EXTRACT(HOUR FROM start_datetime) BETWEEN 16 AND 18 THEN 'Evening Rush'
@@ -33,4 +35,3 @@ SELECT
     END AS commute_period
 
 FROM staged_data
-
