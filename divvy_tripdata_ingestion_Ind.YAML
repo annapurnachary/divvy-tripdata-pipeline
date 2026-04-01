@@ -1,4 +1,4 @@
-id: divvy_tripdata_ingestion
+id: divvy_tripdata_ingestion_Ind
 namespace: zoomcamp.project
 
 inputs:
@@ -89,9 +89,13 @@ tasks:
 
   - id: load_to_bq
     type: io.kestra.plugin.gcp.bigquery.LoadFromGcs
+    retry:
+      type: constant
+      interval: PT30S  # Wait 30 seconds before retrying
+      maxAttempts: 3   # Try 3 times before failing
     serviceAccount: "{{ kv('GCP_CREDS') }}"
     projectId: "{{ vars.gcp_project }}"
-    from: 
+    from:
       - "gs://{{ vars.gcp_bucket }}/raw/divvy/{{ inputs.year }}/{{ inputs.month }}/*.parquet"
     destinationTable: "{{ vars.gcp_project }}.divvy_trips_data.external_divvy_data"
     format: PARQUET
@@ -103,46 +107,43 @@ tasks:
   - id: dbt_workflow
     type: io.kestra.plugin.core.flow.WorkingDirectory
     tasks:
-    - id: git_clone
-      type: io.kestra.plugin.git.Clone
-      url: "https://github.com/annapurnachary/divvy-tripdata-pipeline"
-      branch: main
+      - id: git_clone
+        type: io.kestra.plugin.git.Clone
+        url: "https://github.com/annapurnachary/divvy-tripdata-pipeline"
+        branch: main
 
-  
-    - id: dbt_transform
-      type: io.kestra.plugin.dbt.cli.DbtCLI
-      taskRunner:
-        type: io.kestra.plugin.core.runner.Process
-      env:
-        GCP_PROJECT: "{{ vars.gcp_project }}"
-        GCP_CREDS_JSON: "{{ kv('GCP_CREDS') }}"
-      
+      - id: dbt_transform
+        type: io.kestra.plugin.dbt.cli.DbtCLI
+        taskRunner:
+          type: io.kestra.plugin.core.runner.Process
+        env:
+          GCP_PROJECT: "{{ vars.gcp_project }}"
+          GCP_CREDS_JSON: "{{ kv('GCP_CREDS') }}"
 
-      beforeCommands:
-        - pip install dbt-bigquery
-        # 1. Safely write the JSON to a file without interpreting special characters
-        - |
-          cat << 'EOF' > gcp_creds.json
-          {{ kv('GCP_CREDS') }}
-          EOF
-        # 2. Create the profiles.yml pointing to that file
-        - |
-          cat << 'EOF' > profiles.yml
-          final_project_divvy:
-            outputs:
-              dev:
-                type: bigquery
-                method: service-account
-                project: {{ vars.gcp_project }}
-                dataset: divvy_trips_data
-                threads: 4
-                keyfile: gcp_creds.json
-                priority: interactive
-            target: dev
-          EOF
-  
+        beforeCommands:
+          - pip install dbt-bigquery
+          # 1. Safely write the JSON to a file without interpreting special characters
+          - |
+            cat << 'EOF' > gcp_creds.json
+            {{ kv('GCP_CREDS') }}
+            EOF
+          # 2. Create the profiles.yml pointing to that file
+          - |
+            cat << 'EOF' > profiles.yml
+            final_project_divvy:
+              outputs:
+                dev:
+                  type: bigquery
+                  method: service-account
+                  project: {{ vars.gcp_project }}
+                  dataset: divvy_trips_data
+                  threads: 4
+                  keyfile: gcp_creds.json
+                  priority: interactive
+              target: dev
+            EOF
 
-      commands:
-        # Use the absolute path to the dbt executable
-        - /home/kestra/.local/bin/dbt deps
-        - /home/kestra/.local/bin/dbt build
+        commands:
+          # Use the absolute path to the dbt executable
+          - /home/kestra/.local/bin/dbt deps
+          - /home/kestra/.local/bin/dbt build

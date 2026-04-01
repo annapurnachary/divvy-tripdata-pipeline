@@ -1,0 +1,96 @@
+id: divvy_tripdata_v2
+namespace: zoomcamp.project
+
+inputs:
+  - id: year
+    type: SELECT
+    values: [ "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025" ]
+    defaults: "2024"
+  - id: month
+    type: SELECT
+    values: [ "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12" ]
+    defaults: "01"
+
+variables:
+  gcp_bucket: "divvy_data_lake"
+  gcp_project: "final-project-de-zoomcamp-2026"
+
+tasks:
+  - id: python_ingest
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    beforeCommands:
+      - pip install pandas pyarrow google-cloud-storage requests
+    env:
+      YEAR: "{{ inputs.year }}"
+      MONTH: "{{ inputs.month }}"
+      GCP_GCS_BUCKET: "{{ vars.gcp_bucket }}"
+      GCP_CREDS_JSON: "{{ kv('GCP_CREDS') }}"
+    script: |
+      import os, io, json, requests, zipfile, pandas as pd
+      from google.cloud import storage
+      from google.oauth2 import service_account
+
+      BASE_URL = "https://divvy-tripdata.s3.amazonaws.com/"
+      
+      def run():
+          info = json.loads(os.environ.get("GCP_CREDS_JSON"))
+          credentials = service_account.Credentials.from_service_account_info(info)
+          client = storage.Client(credentials=credentials, project=info['project_id'])
+          
+          year, month = os.environ.get("YEAR"), os.environ.get("MONTH")
+          month_str = f"{int(month):02d}"
+          
+          # Check both standard and "public" naming patterns
+          patterns = [f"{year}{month_str}-divvy-tripdata.zip", f"{year}{month_str}-divvy-publictripdata.zip"]
+          
+          r = None
+          for p in patterns:
+              res = requests.get(BASE_URL + p)
+              if res.status_code == 200:
+                  r = res
+                  print(f"Found: {p}")
+                  break
+          
+          if not r: 
+              raise FileNotFoundError(f"No file found for {year}-{month_str} on Divvy S3")
+
+          with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+              # Filter out Mac metadata and non-csv files
+              csv_list = [f for f in z.namelist() if f.endswith('.csv') and not f.startswith('__') and 'MACOSX' not in f]
+              for csv in csv_list:
+                  with z.open(csv) as f:
+                      try:
+                          df = pd.read_csv(f, encoding='utf-8')
+                      except:
+                          print(f"UTF-8 failed for {csv}, trying ISO-8859-1")
+                          with z.open(csv) as f_retry:
+                              df = pd.read_csv(f_retry, encoding='ISO-8859-1')
+                      
+                      buf = io.BytesIO()
+                      df.to_parquet(buf, engine='pyarrow', index=False)
+                      
+                      # Clean name to ensure it's just the filename, not a sub-folder path
+                      clean_name = os.path.basename(csv).replace('.csv', '.parquet')
+                      obj = f"raw/divvy/{year}/{month_str}/{clean_name}"
+                      
+                      buf.seek(0)
+                      client.bucket(os.environ.get("GCP_GCS_BUCKET")).blob(obj).upload_from_file(buf)
+                      print(f"Uploaded: gs://{os.environ.get('GCP_GCS_BUCKET')}/{obj}")
+
+      if __name__ == "__main__": run()
+
+  - id: load_to_bq
+    type: io.kestra.plugin.gcp.bigquery.LoadFromGcs
+    serviceAccount: "{{ kv('GCP_CREDS') }}"
+    projectId: "{{ vars.gcp_project }}"
+   
+    from: 
+      - "gs://{{ vars.gcp_bucket }}/raw/divvy/{{ inputs.year }}/{{ inputs.month }}/*.parquet"
+    destinationTable: "{{ vars.gcp_project }}.divvy_trips_data.external_divvy_data"
+    format: PARQUET
+    writeDisposition: WRITE_APPEND
+    createDisposition: CREATE_IF_NEEDED
+    autodetect: true
+

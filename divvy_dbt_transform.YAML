@@ -1,0 +1,41 @@
+id: divvy_dbt_transform
+namespace: zoomcamp.project
+
+variables:
+  gcp_project: "final-project-de-zoomcamp-2026"
+
+tasks:
+  - id: dbt_workflow
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: git_clone
+        type: io.kestra.plugin.git.Clone
+        url: "https://github.com/annapurnachary/divvy-tripdata-pipeline"
+        branch: main
+
+      - id: dbt_run
+        type: io.kestra.plugin.dbt.cli.DbtCLI
+        taskRunner:
+          type: io.kestra.plugin.core.runner.Process
+        env:
+          GCP_PROJECT: "{{ vars.gcp_project }}"
+          GCP_CREDS_JSON: "{{ kv('GCP_CREDS') }}"
+        beforeCommands:
+          - pip install dbt-bigquery
+          - |
+            cat << 'EOF' > profiles.yml
+            final_project_divvy:
+              outputs:
+                dev:
+                  type: bigquery
+                  method: service-account
+                  project: {{ vars.gcp_project }}
+                  dataset: divvy_trips_data
+                  threads: 4
+                  keyfile: gcp_creds.json
+              target: dev
+            EOF
+          - python3 -c "import os; open('gcp_creds.json', 'w').write(os.environ['GCP_CREDS_JSON'])"
+        commands:
+          - /home/kestra/.local/bin/dbt deps
+          - /home/kestra/.local/bin/dbt build
