@@ -45,7 +45,7 @@ flowchart LR
     D --> E
     G --> H
 
-    %% Styling (No spaces after colons or commas for better compatibility)
+    %% Styling
     style B fill:#f9f,stroke:#333,stroke-width:2px
     style D fill:#4285f4,stroke:#333,stroke-width:2px
     style G fill:#fbbc05,stroke:#333,stroke-width:2px
