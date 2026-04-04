@@ -10,8 +10,8 @@ This project builds an end-to-end data pipeline to analyze Chicago Divvy Bike sh
 * Data Warehouse: BigQuery (External & Partitioned Tables) .
 * Transformations: dbt Core (models for cleaning, deduplication, and partitioning) .
 * Visualization: Looker Studio (4-page interactive report) .
-```mermaid
-graph LR
+
+flowchart LR
     subgraph External_Sources [External Data]
         A[Divvy S3 Bucket / API]
     end
@@ -40,17 +40,16 @@ graph LR
     end
 
     %% Data Flow Connections
-    A -->|Ingested by| C
-    C -->|Parquet Files| D
-    D -->|Schema Definition| E
-    G -->|Analytical Source| H
+    A --> C
+    C --> D
+    D --> E
+    G --> H
 
-    %% Styling
+    %% Styling (No spaces after colons or commas for better compatibility)
     style B fill:#f9f,stroke:#333,stroke-width:2px
-    style D fill:#4285F4,color:#fff
-    style G fill:#FBBC05,color:#333
-    style H fill:#34A853,color:#fff
-
+    style D fill:#4285f4,stroke:#333,stroke-width:2px
+    style G fill:#fbbc05,stroke:#333,stroke-width:2px
+    style H fill:#34a853,stroke:#333,stroke-width:2px
 
 ------------------------------
 ## 🚀 Quick Start (Reproducibility Guide)## 
