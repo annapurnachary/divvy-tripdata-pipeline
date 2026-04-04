@@ -11,6 +11,7 @@ This project builds an end-to-end data pipeline to analyze Chicago Divvy Bike sh
 * Transformations: dbt Core (models for cleaning, deduplication, and partitioning) .
 * Visualization: Looker Studio (4-page interactive report) .
 
+mermaid
 flowchart LR
     subgraph External_Sources [External Data]
         A[Divvy S3 Bucket / API]
@@ -50,6 +51,7 @@ flowchart LR
     style D fill:#4285f4,stroke:#333,stroke-width:2px
     style G fill:#fbbc05,stroke:#333,stroke-width:2px
     style H fill:#34a853,stroke:#333,stroke-width:2px
+
 
 ------------------------------
 ## 🚀 Quick Start (Reproducibility Guide)## 
