@@ -17,23 +17,25 @@ flowchart LR
         A[Divvy S3 Bucket / API]
     end
 
-    subgraph Orchestration_Layer [Orchestration & Ingestion - Docker]
+    subgraph Orchestration_Layer [Orchestration]
         B[Kestra Orchestrator]
-        C[Python Ingestion Script]
-        B --> C
-    end
 
-    subgraph Storage_Layer [GCP Data Lake]
-        D[(Google Cloud Storage)]
-    end
+        subgraph Ingestion_Layer [Ingestion - Docker]
+            C[Python Ingestion Script]
+        end
 
-    subgraph Warehouse_Layer [GCP Data Warehouse]
-        E[BigQuery External Tables]
-        F[dbt Transformations]
-        G[(BigQuery Production Tables)]
-        
-        E --> F
-        F --> G
+        subgraph Storage_Layer [GCP Data Lake]
+            D[(Google Cloud Storage)]
+        end
+
+        subgraph Warehouse_Layer [GCP Data Warehouse]
+            E[BigQuery External Tables]
+            F[dbt Transformations]
+            G[(BigQuery Production Tables)]
+            
+            E --> F
+            F --> G
+        end
     end
 
     subgraph Visualization_Layer [Reporting]
@@ -51,7 +53,6 @@ flowchart LR
     style D fill:#4285f4,stroke:#333,stroke-width:2px
     style G fill:#fbbc05,stroke:#333,stroke-width:2px
     style H fill:#34a853,stroke:#333,stroke-width:2px
-
 ```
 
 ------------------------------
