@@ -74,9 +74,9 @@ Instead of manual steps, use the terraform/ folder to automatically create the G
 3. Pipeline Ingestion (Docker & Kestra)
 Containerizing ensures the project runs identically across different OS setups .
 
-4. The "Zoomcamp Way" is to let dbt handle partitioning and clustering.
+4. The "Zoomcamp Way" is to let dbt handle partitioning and clustering.          
 cd dbt_divvy
-dbt build  # Runs models, timestamp casts, and data quality tests
+dbt build    # Runs models, timestamp casts, and data quality tests
 
 # Step 1: Authenticate with GCP
 gcloud auth application-default login
@@ -87,7 +87,7 @@ terraform init
 terraform apply
 
 # Step 3: Spin up the entire environment
-Here is the YAML files to spin up the entire environment: 
+Here is the YAML files to spin up the entire environment in Kestra: 
 https://github.com/annapurnachary/divvy-tripdata-pipeline/blob/main/docker-compose.yaml
 
 Run this:
@@ -101,20 +101,23 @@ Link: https://github.com/annapurnachary/divvy-tripdata-pipeline/blob/main/divvy_
 # Step 4: Verify the data in External,Staging and Fact tables in Big Query.
 
 After the Kestra Flow is successfully finished --
-* verify the data loaded in raw layer- "divvy_data_lake"-
+* Verify the data loaded in raw layer- "divvy_data_lake"-
   where GCS buckets created Year/month wise.
 * Kestra loads the data from GCS to external tables in Big query 
   "external_divvy_data"
-* I used the dbt transformations for cleaning, deduplication, and partitioning the data.
+* Used the dbt transformations for cleaning, deduplication, and partitioning the data.
+* Verify the data loaded in Big query Dataset called "divvy_trips_data". 
 * Dbt creates the staging table:
   "staging_divvy_trips" and 
+
   4 fact tables:
   "fct_divvy_trips"
   "fct_hourly_trends"
   "fct_station_popularity"
   "fct_popular_routes"
+ 
+ * Based on these fact tables dashboards are created in the Looker Studio.
 
-* Verify the data loaded in Big query Dataset called "divvy_trips_data". 
 
 
 
