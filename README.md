@@ -97,6 +97,7 @@ docker-compose up -d
 * Navigate to the Backfill tab and execute for the desired date range .
 Here is the Kestra Flow to run the end-to-end pipeline - divvy_master_ingestion.YAML
 Link: https://github.com/annapurnachary/divvy-tripdata-pipeline/blob/main/divvy_master_ingestion.YAML 
+Note : Don't forget to add KV Store values for "GCP-CREDS" under Namespaces in Kestra.
 
 # Step 4: Verify the data in External,Staging and Fact tables in Big Query.
 
